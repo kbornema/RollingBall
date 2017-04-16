@@ -6,11 +6,19 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameManager : AManager<GameManager> 
-{    
+{
+    [SerializeField]
+    private Text _levelFinishTextField;
+    [SerializeField]
+    private Button _restartButton;
+    [SerializeField]
+    private Button _nextLevelButton;
     [SerializeField]
     private GameObject _ingameUiRoot;
     [SerializeField]
     private GameObject _gravityRoot;
+    [SerializeField]
+    private GameObject _levelFinishRoot;
     [SerializeField]
     private float _maxWorldRotationDegree = 15.0f;
     [SerializeField]
@@ -26,6 +34,7 @@ public class GameManager : AManager<GameManager>
 
     public Vector3 MoveVec { get; private set; }
     private Vector2 _movementFactors;
+    public Vector2 MoveFactors { get { return _movementFactors; } }
 
     private int totalCoins;
     private int pickedCoins;
@@ -40,6 +49,19 @@ public class GameManager : AManager<GameManager>
     protected override void OnAwake()
     {
         DontDestroyOnLoad(gameObject);
+
+        _restartButton.onClick.AddListener(OnRestart);
+        _nextLevelButton.onClick.AddListener(OnNextLevel);
+    }
+
+    private void OnNextLevel()
+    {
+       LevelManager.Instance.ChangeToNextLevel();
+    }
+
+    private void OnRestart()
+    {
+        LevelManager.Instance.RestartLevel();
     }
 
     private void Start()
@@ -49,21 +71,28 @@ public class GameManager : AManager<GameManager>
         LevelManager.Instance.onLevelInvisible.AddListener(OnLevelInvisible);
 
         OnLevelInvisible(LevelManager.Instance);
+        OnLevelStart(LevelManager.Instance);
     }
 
     private void OnLevelInvisible(LevelManager l)
     {
         Clear();
+        _gravityRoot.transform.rotation = Quaternion.identity;
         _ingameUiRoot.SetActive(l.CurrentLevel.IsPlayable);
+        _levelFinishRoot.SetActive(false);
     }
 
     private void OnLevelStart(LevelManager l)
     {
-        
+        _levelFinishRoot.SetActive(false);
     }
 
     private void OnEndLevel(LevelManager l)
     {
+        _levelFinishRoot.SetActive(true);
+        _levelFinishTextField.text = "Level geschafft!\nDeine Zeit: " + currentTimer.GetDisplayString();
+        MoveVec = Vector3.zero;
+        _movementFactors = Vector2.zero;
         StartCoroutine(EndRoutine());
     }
     
@@ -81,7 +110,6 @@ public class GameManager : AManager<GameManager>
         
         _timeText.color = Color.white;
     }
-
     
     private IEnumerator EndRoutine()
     {
@@ -102,15 +130,22 @@ public class GameManager : AManager<GameManager>
     // Update is called once per frame
     private void Update()
     {
-        HandleInput();
 
-        HandleTimer();
+        if(LevelManager.Instance.LevelIsRunning)
+        {
+            HandleInput();
+
+            HandleTimer();
+        }
+
     }
     
     public void PickedCoin(CoinPickup c)
     {
         pickedCoins++;
         SetPointText();
+
+        SoundManager.Instance.PlayPickupSound();
 
         if (pickedCoins == totalCoins)
         {

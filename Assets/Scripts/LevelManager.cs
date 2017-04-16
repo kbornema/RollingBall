@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class LevelManager : AManager<LevelManager> 
 {
@@ -14,6 +15,10 @@ public class LevelManager : AManager<LevelManager>
     public Event onLevelEnd = new Event();
     [HideInInspector]
     public Event onLevelInvisible = new Event();
+
+
+    [SerializeField]
+    private Text _levelNameText;
 
     [SerializeField]
     private LevelHierarchy _levels;
@@ -58,22 +63,31 @@ public class LevelManager : AManager<LevelManager>
         levelIsRunning = false;
         onLevelEnd.Invoke(this);
 
-        ChangeLevel(_levels.GetLevel(_currentLevel.LevelId + 1));
+        //ChangeLevel(_levels.GetLevel(_currentLevel.LevelId + 1));
+    }
+
+    private void OnSceneInvisible()
+    {
+        _levelNameText.text = "Level " + (_currentLevel.LevelId + 1);
+        onLevelInvisible.Invoke(this);
     }
     
     public void ChangeLevel(SceneRef newScene)
     {
+        if (levelIsChanging)
+            return;
+
         StartCoroutine(ChangeLevelRoutine(newScene));
     }
 
     private IEnumerator ChangeLevelRoutine(SceneRef newScene)
     {
         _currentLevel = newScene;
-        yield return FadeLevel(newScene.GetSceneName(), 1.0f, Color.black);
+        yield return FadeLevel(newScene, 1.0f, Color.black);
         StartLevel();
     }
 
-    private IEnumerator FadeLevel(string sceneName, float fadeTime, Color inColor)
+    private IEnumerator FadeLevel(SceneRef scene, float fadeTime, Color inColor)
     {
         levelIsChanging = true;
 
@@ -103,9 +117,9 @@ public class LevelManager : AManager<LevelManager>
         t = 1.0f;
         color = inColor;
         
-        SceneManager.LoadScene(sceneName);
+        SceneManager.LoadScene(scene.GetSceneName());
+        OnSceneInvisible();
 
-        onLevelInvisible.Invoke(this);
 
         while (t > 0.0f)
         {
@@ -122,5 +136,15 @@ public class LevelManager : AManager<LevelManager>
         levelIsChanging = false;
     }
 
-    
+
+
+    public void ChangeToNextLevel()
+    {
+        ChangeLevel(_levels.GetLevel(_currentLevel.LevelId + 1));
+    }
+
+    public void RestartLevel()
+    {
+        ChangeLevel(_currentLevel);
+    }
 }

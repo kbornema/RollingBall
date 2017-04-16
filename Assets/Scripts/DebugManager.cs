@@ -13,6 +13,9 @@ public class DebugManager : AManager<DebugManager>
     private GameObject _debugTextPanel;
     public GameObject DebugTextPanel { get { return _debugTextPanel; } }
 
+
+    [SerializeField]
+    private Text _veloXYTextField;
     [SerializeField]
     private Text debugTextField;
     [SerializeField]
@@ -36,6 +39,8 @@ public class DebugManager : AManager<DebugManager>
     private void Update()
     {
         _deltaTime += (Time.deltaTime - _deltaTime);
+
+        _veloXYTextField.text = GameManager.Instance.MoveFactors.x.ToString("0.0") + ", " + GameManager.Instance.MoveFactors.y.ToString("0.0");
     }
 
     private void LogMsgReceived(string condition, string stackTrace, LogType type)
