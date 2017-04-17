@@ -22,7 +22,8 @@ public class PlayerBall : MonoBehaviour
         transform.position = startPos;
 
         LevelManager.Instance.onLevelEnd.AddListener(OnLevelEnd);
-        
+
+        GameManager.Instance.SetPlayer(this);
     }
 
     private void OnLevelEnd(LevelManager arg0)

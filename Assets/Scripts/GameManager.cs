@@ -20,6 +20,8 @@ public class GameManager : AManager<GameManager>
     [SerializeField]
     private GameObject _levelFinishRoot;
     [SerializeField]
+    private GameObject _pauseMenuRoot;
+    [SerializeField]
     private float _maxWorldRotationDegree = 15.0f;
     [SerializeField]
     private Text _pointsText;
@@ -30,7 +32,7 @@ public class GameManager : AManager<GameManager>
     [SerializeField]
     private float _maxDampSecs;
     [SerializeField]
-    private float _endBlinkFactor = 5.0f;
+    private AnimationCurve _movementGraph;
 
     public Vector3 MoveVec { get; private set; }
     private Vector2 _movementFactors;
@@ -44,7 +46,10 @@ public class GameManager : AManager<GameManager>
     private Vector3 helpVelocity;
     
     private HighscoreTime currentTimer;
-    private float highscoreTime;    
+    public HighscoreTime CurrentScore { get { return currentTimer; } }
+    private float highscoreTime;
+
+    public PlayerBall Player { get; private set; }
 
     protected override void OnAwake()
     {
@@ -93,7 +98,6 @@ public class GameManager : AManager<GameManager>
         _levelFinishTextField.text = "Level geschafft!\nDeine Zeit: " + currentTimer.GetDisplayString();
         MoveVec = Vector3.zero;
         _movementFactors = Vector2.zero;
-        StartCoroutine(EndRoutine());
     }
     
     public void Clear()
@@ -107,30 +111,11 @@ public class GameManager : AManager<GameManager>
         currentTimer.SetTime(0.0f);
         SetPointText();
         SetTimeText();
-        
-        _timeText.color = Color.white;
     }
-    
-    private IEnumerator EndRoutine()
-    {
-        Color c = _timeText.color;
-        float time = 0.0f;
-
-        while (!LevelManager.Instance.LevelIsRunning)
-        {
-            time += Time.deltaTime;
-            c.a = Mathf.Sin(time * _endBlinkFactor) * 0.5f + 0.5f;
-
-            _timeText.color = c;
-            yield return new WaitForEndOfFrame();
-        }
-    }
-     
 
     // Update is called once per frame
     private void Update()
     {
-
         if(LevelManager.Instance.LevelIsRunning)
         {
             HandleInput();
@@ -138,7 +123,27 @@ public class GameManager : AManager<GameManager>
             HandleTimer();
         }
 
+        if (!MainMenu.IsOpen && !LevelManager.Instance.LevelIsChanging && LevelManager.Instance.LevelIsRunning)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Menu))
+            {
+                Pause(!IsPaused);
+            }
+
+        }
+       
     }
+
+    public bool IsPaused { get { return AudioListener.pause; } }
+
+    public void Pause(bool val)
+    {
+       // LevelManager.Instance.LevelIsRunning = !val;
+        Time.timeScale = val ? 0.0f : 1.0f;
+        AudioListener.pause = val;
+        _pauseMenuRoot.SetActive(val);
+    }
+
     
     public void PickedCoin(CoinPickup c)
     {
@@ -195,7 +200,7 @@ public class GameManager : AManager<GameManager>
 #if UNITY_STANDALONE || UNITY_EDITOR
         UpdateOrientation(ref targetUp, new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
 #else
-        UpdateOrientation(ref targetUp, Input.acceleration);
+        UpdateOrientation(ref targetUp, Input.acceleration * 2.0f);
 #endif
 
         currentUp = Vector3.SmoothDamp(currentUp, targetUp, ref helpVelocity, Vector3.Distance(currentUp, targetUp) * (_maxDampSecs - _minDampSecs) + _minDampSecs);
@@ -206,6 +211,14 @@ public class GameManager : AManager<GameManager>
 
     private void UpdateOrientation(ref Vector3 newUp, Vector2 vec)
     {
+        vec.x = Mathf.Clamp(vec.x, -1.0f, 1.0f);
+        vec.y = Mathf.Clamp(vec.y, -1.0f, 1.0f);
+
+        Vector2 signs = new Vector2(Mathf.Sign(vec.x), Mathf.Sign(vec.y));
+
+        vec.x = _movementGraph.Evaluate(Mathf.Abs(vec.x)) * signs.x;
+        vec.y = _movementGraph.Evaluate(Mathf.Abs(vec.y)) * signs.y;
+
         if (vec.x != 0.0f)
             Rotate(ref newUp, Vector3.forward, _maxWorldRotationDegree * vec.x);
 
@@ -217,4 +230,9 @@ public class GameManager : AManager<GameManager>
     }
 
 
+
+    public void SetPlayer(PlayerBall playerBall)
+    {
+        Player = playerBall;
+    }
 }

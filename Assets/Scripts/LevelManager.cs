@@ -33,7 +33,7 @@ public class LevelManager : AManager<LevelManager>
 
     [SerializeField, ReadOnly]
     private bool levelIsRunning = false;
-    public bool LevelIsRunning { get { return levelIsRunning; } }
+    public bool LevelIsRunning { get { return levelIsRunning; } set { levelIsRunning = value; } }
 
     [SerializeField, ReadOnly]
     private bool levelIsChanging = false;
@@ -58,10 +58,14 @@ public class LevelManager : AManager<LevelManager>
         onLevelStart.Invoke(this);
     }
 
+    /// <summary>Only called when a level has been sucessfully finished.</summary>
     public void EndLevel()
     {
         levelIsRunning = false;
         onLevelEnd.Invoke(this);
+
+        SavegameManager.Instance.GetCurrentSavegame().SaveLevelFinished(_currentLevel);
+        SavegameManager.Instance.GetCurrentSavegame().SetHighscore(_currentLevel, GameManager.Instance.CurrentScore);
 
         //ChangeLevel(_levels.GetLevel(_currentLevel.LevelId + 1));
     }
@@ -69,6 +73,9 @@ public class LevelManager : AManager<LevelManager>
     private void OnSceneInvisible()
     {
         _levelNameText.text = "Level " + (_currentLevel.LevelId + 1);
+
+        SavegameManager.Instance.SaveCurrentSavegame();
+
         onLevelInvisible.Invoke(this);
     }
     
@@ -76,6 +83,8 @@ public class LevelManager : AManager<LevelManager>
     {
         if (levelIsChanging)
             return;
+
+        GameManager.Instance.Pause(false);
 
         StartCoroutine(ChangeLevelRoutine(newScene));
     }
@@ -146,5 +155,10 @@ public class LevelManager : AManager<LevelManager>
     public void RestartLevel()
     {
         ChangeLevel(_currentLevel);
+    }
+
+    public List<SceneRef> GetAllLevel()
+    {
+        return _levels.GetAllLevel();
     }
 }

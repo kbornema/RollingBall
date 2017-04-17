@@ -19,6 +19,11 @@ public class LevelHierarchy : ScriptableObject
         return levels[levelId];
     }
 
+    public List<SceneRef> GetAllLevel()
+    {
+        return levels;
+    }
+
     public SceneRef GetLevel(string sceneName)
     {
         for (int i = 0; i < levels.Count; i++)
@@ -37,5 +42,7 @@ public class LevelHierarchy : ScriptableObject
             levels[i].LevelId = i;
         }
     }
-	
+
+
+
 }

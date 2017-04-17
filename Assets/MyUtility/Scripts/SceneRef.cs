@@ -17,6 +17,36 @@ public sealed class SceneRef : ScriptableObject
     private bool isPlayable;
     public bool IsPlayable { get { return isPlayable; } }
 
+    [SerializeField]
+    private HighscoreTime goldTime;
+    public HighscoreTime GoldTime { get { return goldTime; } }
+
+    [SerializeField]
+    public float silverTimePercent = 1.5f;
+    public HighscoreTime SilverTime { get { return GetSilverTime(); } }
+
+    private HighscoreTime GetSilverTime()
+    {
+        goldTime.ComputeTotalTime();
+        HighscoreTime time = new HighscoreTime();
+        time.SetTime(goldTime.TotalTime * silverTimePercent);
+
+        return time;
+    }
+
+    [SerializeField]
+    public float bronzeTimePercent = 2.0f;
+    public HighscoreTime BronzeTime { get { return GetBronzeTime(); } }
+
+    private HighscoreTime GetBronzeTime()
+    {
+        goldTime.ComputeTotalTime();
+        HighscoreTime time = new HighscoreTime();
+        time.SetTime(goldTime.TotalTime * bronzeTimePercent);
+
+        return time;
+    }
+
     [SerializeField, ReadOnly]
     private string sceneName;
 
