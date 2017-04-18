@@ -5,11 +5,11 @@ using UnityEngine;
 public class SoundOnCollision : MonoBehaviour {
 
     [SerializeField]
-    private AudioSource audio;
+    private AudioSource _audio;
 
     void OnCollisionEnter(Collision col)
     {
-        audio.Play();
+        _audio.Play();
     }
 
 }

@@ -4,11 +4,10 @@ using UnityEngine;
 
 public class UpDown : MonoBehaviour 
 {
-
-    private float down;
-    private float up;
     [SerializeField]
-    private float offset = 0.5f;
+    private Transform min;
+    [SerializeField]
+    private Transform max;
     [SerializeField]
     private float speed = 1.0f;
 
@@ -18,21 +17,21 @@ public class UpDown : MonoBehaviour
 	void Start () 
     {
         time = 0.0f;
-        down = transform.position.y;
-        up = down + offset;
 	}
 	
 	// Update is called once per frame
 	void FixedUpdate()
     {
+        if (!LevelManager.Instance.LevelIsRunning)
+            return;
+
         time += Time.fixedDeltaTime;
 
         float t = Mathf.Sin(time * speed) * 0.5f + 0.5f; 
 	    	
-        Vector3 pos = gameObject.transform.position;
+       
+        gameObject.transform.position = Vector3.Lerp(min.transform.position, max.transform.position, t);
 
-        pos.y = Mathf.Lerp(up, down, t);
-
-        gameObject.transform.position = pos;
+        
 	}
 }

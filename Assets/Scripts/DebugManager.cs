@@ -32,6 +32,7 @@ public class DebugManager : AManager<DebugManager>
         Application.logMessageReceived += LogMsgReceived;
         StartCoroutine(FpsRoutine());
 #else
+        _debugRoot.SetActive(false);
         this.enabled = false;
 #endif
     }
